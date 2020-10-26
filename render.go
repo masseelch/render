@@ -3,62 +3,98 @@ package render
 import (
 	"bytes"
 	"encoding/json"
+	"encoding/xml"
 	"net/http"
 )
 
-type ErrResponse struct {
-	Code   int         `json:"code"`             // http response status code
-	Status string      `json:"status"`           // user-level status message
-	Errors interface{} `json:"errors,omitempty"` // application-level error messages, for debugging
+const (
+	ContentTypeJson      = "application/json"
+	ContentTypeTextPlain = "text/plain"
+	ContentTypeXml       = "application/xml"
+	CharsetSuffix        = "; charset=utf-8"
+	HeaderAccept         = "Accept"
+	HeaderContentType    = "Content-Type"
+)
+
+var (
+	AllowXML = false
+)
+
+func BadRequest(w http.ResponseWriter, r *http.Request, msg interface{}) {
+	resp := NewResponse(http.StatusBadRequest, msg)
+	Render(w, r, resp.Code, resp)
 }
 
-func InternalServerError(w http.ResponseWriter, err ...interface{}) {
-	resp := ErrResponse{
-		Code:   http.StatusInternalServerError,
-		Status: http.StatusText(http.StatusInternalServerError),
-	}
-	if len(err) > 0 {
-		resp.Errors = err[0]
-	}
-	render(w, resp)
+func Created(w http.ResponseWriter, r *http.Request, msg interface{}) {
+	Render(w, r, http.StatusCreated, msg)
 }
 
-func JSON(w http.ResponseWriter, d interface{}) {
-	buf := &bytes.Buffer{}
-	enc := json.NewEncoder(buf)
-	enc.SetEscapeHTML(true)
-	if err := enc.Encode(d); err != nil {
+func Forbidden(w http.ResponseWriter, r *http.Request, msg interface{}) {
+	resp := NewResponse(http.StatusForbidden, msg)
+	Render(w, r, resp.Code, resp)
+}
+
+func InternalServerError(w http.ResponseWriter, r *http.Request, msg interface{}) {
+	resp := NewResponse(http.StatusInternalServerError, msg)
+	Render(w, r, resp.Code, resp)
+}
+
+func NoContent(w http.ResponseWriter, r *http.Request) {
+	resp := NewResponse(http.StatusNoContent, nil)
+	Render(w, r, resp.Code, resp)
+}
+
+func NotFound(w http.ResponseWriter, r *http.Request, msg interface{}) {
+	resp := NewResponse(http.StatusNotFound, msg)
+	Render(w, r, resp.Code, resp)
+}
+
+func Unauthorized(w http.ResponseWriter, r *http.Request, msg interface{}) {
+	resp := NewResponse(http.StatusUnauthorized, msg)
+	Render(w, r, resp.Code, resp)
+}
+
+func OK(w http.ResponseWriter, r *http.Request, msg interface{}) {
+	Render(w, r, http.StatusOK, msg)
+}
+
+func PartialContent(w http.ResponseWriter, r *http.Request, msg interface{}) {
+	Render(w, r, http.StatusPartialContent, msg)
+}
+
+func Render(w http.ResponseWriter, r *http.Request, code int, d interface{}) {
+	switch r.Header.Get(HeaderAccept) {
+	case ContentTypeXml:
+		XML(w, code, d)
+	default:
+		JSON(w, code, d)
+	}
+}
+
+func JSON(w http.ResponseWriter, code int, d interface{}) {
+	buf := new(bytes.Buffer)
+	if err := json.NewEncoder(buf).Encode(d); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	_, _ = w.Write(buf.Bytes())
+	w.Header().Set(HeaderContentType, ContentTypeJson+CharsetSuffix)
+	w.WriteHeader(code)
+	w.Write(buf.Bytes())
 }
 
-func NotFound(w http.ResponseWriter, err ...interface{}) {
-	resp := ErrResponse{
-		Code:   http.StatusNotFound,
-		Status: http.StatusText(http.StatusNotFound),
+func XML(w http.ResponseWriter, code int, d interface{}) {
+	buf := new(bytes.Buffer)
+	if err := xml.NewEncoder(w).Encode(d); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
-	if len(err) > 0 {
-		resp.Errors = err[0]
-	}
-	render(w, resp)
+	w.Header().Set(HeaderContentType, ContentTypeXml+CharsetSuffix)
+	w.WriteHeader(code)
+	w.Write(buf.Bytes())
 }
 
-func render(w http.ResponseWriter, resp ErrResponse) {
-	w.WriteHeader(resp.Code)
-	JSON(w, resp)
-}
-
-func Unauthorized(w http.ResponseWriter, err ...interface{}) {
-	resp := ErrResponse{
-		Code:   http.StatusUnauthorized,
-		Status: http.StatusText(http.StatusUnauthorized),
-	}
-	if len(err) > 0 {
-		resp.Errors = err[0]
-	}
-	render(w, resp)
+func Raw(w http.ResponseWriter, code int, d []byte) {
+	w.Header().Set(HeaderContentType, ContentTypeTextPlain+CharsetSuffix)
+	w.WriteHeader(code)
+	_, _ = w.Write(d)
 }
