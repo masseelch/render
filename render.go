@@ -16,10 +16,6 @@ const (
 	HeaderContentType    = "Content-Type"
 )
 
-var (
-	AllowXML = false
-)
-
 func BadRequest(w http.ResponseWriter, r *http.Request, msg interface{}) {
 	resp := NewResponse(http.StatusBadRequest, msg)
 	Render(w, r, resp.Code, resp)
@@ -79,7 +75,7 @@ func JSON(w http.ResponseWriter, code int, d interface{}) {
 	}
 	w.Header().Set(HeaderContentType, ContentTypeJson+CharsetSuffix)
 	w.WriteHeader(code)
-	w.Write(buf.Bytes())
+	_, _ = w.Write(buf.Bytes())
 }
 
 func XML(w http.ResponseWriter, code int, d interface{}) {
@@ -90,7 +86,7 @@ func XML(w http.ResponseWriter, code int, d interface{}) {
 	}
 	w.Header().Set(HeaderContentType, ContentTypeXml+CharsetSuffix)
 	w.WriteHeader(code)
-	w.Write(buf.Bytes())
+	_, _ = w.Write(buf.Bytes())
 }
 
 func Raw(w http.ResponseWriter, code int, d []byte) {

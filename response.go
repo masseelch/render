@@ -24,6 +24,8 @@ func NewResponse(code int, msg interface{}) Response {
 			switch err.Tag() {
 			case "required":
 				m[err.Field()] = "This value is required."
+			case "email":
+				m[err.Field()] = "This is not a valid email."
 			default:
 				s := fmt.Sprintf("This value failed validation on '%s", err.Tag())
 				if err.Param() != "" {
