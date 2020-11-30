@@ -10,6 +10,7 @@ import (
 const (
 	ContentTypeJson      = "application/json"
 	ContentTypeTextPlain = "text/plain"
+	ContentTypeTextHtml  = "text/html"
 	ContentTypeXml       = "application/xml"
 	CharsetSuffix        = "; charset=utf-8"
 	HeaderAccept         = "Accept"
@@ -91,6 +92,12 @@ func XML(w http.ResponseWriter, code int, d interface{}) {
 
 func Raw(w http.ResponseWriter, code int, d []byte) {
 	w.Header().Set(HeaderContentType, ContentTypeTextPlain+CharsetSuffix)
+	w.WriteHeader(code)
+	_, _ = w.Write(d)
+}
+
+func HTML(w http.ResponseWriter, code int, d []byte) {
+	w.Header().Set(HeaderContentType, ContentTypeTextHtml+CharsetSuffix)
 	w.WriteHeader(code)
 	_, _ = w.Write(d)
 }
