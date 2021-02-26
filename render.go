@@ -36,9 +36,8 @@ func InternalServerError(w http.ResponseWriter, r *http.Request, msg interface{}
 	Render(w, r, resp.Code, resp)
 }
 
-func NoContent(w http.ResponseWriter, r *http.Request) {
-	resp := NewResponse(http.StatusNoContent, nil)
-	Render(w, r, resp.Code, resp)
+func NoContent(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func NotFound(w http.ResponseWriter, r *http.Request, msg interface{}) {
