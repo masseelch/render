@@ -68,14 +68,14 @@ func Render(w http.ResponseWriter, r *http.Request, code int, d interface{}) {
 }
 
 func JSON(w http.ResponseWriter, code int, d interface{}) {
-	buf := new(bytes.Buffer)
-	if err := json.NewEncoder(buf).Encode(d); err != nil {
+	b, err := json.Marshal(d)
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set(HeaderContentType, ContentTypeJson+CharsetSuffix)
 	w.WriteHeader(code)
-	_, _ = w.Write(buf.Bytes())
+	_, _ = w.Write(b)
 }
 
 func XML(w http.ResponseWriter, code int, d interface{}) {

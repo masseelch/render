@@ -69,10 +69,9 @@ func TestInternalServerError(t *testing.T) {
 }
 
 func TestNoContent(t *testing.T) {
-	rq := httptest.NewRequest(http.MethodGet, "/", nil)
 	rr := httptest.NewRecorder()
 
-	NoContent(rr, rq)
+	NoContent(rr)
 	assert.Equal(t, http.StatusNoContent, rr.Code)
 }
 
@@ -103,6 +102,15 @@ func TestRaw(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rr.Code)
 	assert.Equal(t, ContentTypeTextPlain+CharsetSuffix, rr.Header().Get(HeaderContentType))
 	assert.Equal(t, []byte("test this"), rr.Body.Bytes())
+}
+
+func TestHTML(t *testing.T) {
+	rr := httptest.NewRecorder()
+
+	HTML(rr, http.StatusOK, []byte("<html><body>test this</body></html>"))
+	assert.Equal(t, http.StatusOK, rr.Code)
+	assert.Equal(t, ContentTypeTextHtml+CharsetSuffix, rr.Header().Get(HeaderContentType))
+	assert.Equal(t, []byte("<html><body>test this</body></html>"), rr.Body.Bytes())
 }
 
 func TestOK(t *testing.T) {
